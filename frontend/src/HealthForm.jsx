@@ -4,13 +4,14 @@ import { useNavigate } from "react-router-dom";
 function HealthForm() {
   const navigate = useNavigate();
 
-  const loggedUser = JSON.parse(localStorage.getItem("loggedInUser"));
+  const storedUser = localStorage.getItem("user");
+  const loggedUser = storedUser ? JSON.parse(storedUser) : null;
 
   useEffect(() => {
     if (!loggedUser) {
       navigate("/login");
     }
-  }, []);
+  }, [loggedUser, navigate]);
 
   const [form, setForm] = useState({
     age: "",
@@ -24,42 +25,74 @@ function HealthForm() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const calculateBMI = () => {
-    const heightInMeters = form.height / 100;
-    const bmiValue = (
-      form.weight /
-      (heightInMeters * heightInMeters)
-    ).toFixed(1);
+  const calculateBMI = async () => {
+  if (!form.age || !form.gender || !form.height || !form.weight || !form.diet) {
+    alert("Please fill all fields");
+    return;
+  }
 
-    let category = "";
-    let suggestion = "";
+  const height = Number(form.height);
+  const weight = Number(form.weight);
+  const heightInMeters = height / 100;
 
-    if (bmiValue < 18.5) {
-      category = "Underweight";
-      suggestion = "Increase calorie intake with protein-rich foods.";
-    } else if (bmiValue < 25) {
-      category = "Normal";
-      suggestion = "Maintain balanced diet and regular activity.";
-    } else if (bmiValue < 30) {
-      category = "Overweight";
-      suggestion = "Reduce processed carbs and increase fiber intake.";
-    } else {
-      category = "Obese";
-      suggestion = "Follow calorie deficit diet and increase physical activity.";
+  const bmiValue = Number(
+    (weight / (heightInMeters * heightInMeters)).toFixed(1)
+  );
+
+  let category = "";
+  let suggestion = "";
+
+  if (bmiValue < 18.5) {
+    category = "Underweight";
+    suggestion = "Increase calorie intake with protein-rich foods.";
+  } else if (bmiValue < 25) {
+    category = "Normal";
+    suggestion = "Maintain balanced diet and regular activity.";
+  } else if (bmiValue < 30) {
+    category = "Overweight";
+    suggestion = "Reduce processed carbs and increase fiber intake.";
+  } else {
+    category = "Obese";
+    suggestion = "Follow calorie deficit diet and increase physical activity.";
+  }
+
+  try {
+    const res = await fetch("http://localhost:5000/api/user/update-health", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: loggedUser.id, // 👈 IMPORTANT
+        ...form,
+        bmi: bmiValue,
+        bmiCategory: category,
+        suggestion,
+      }),
+    });
+
+    console.log("Sending:", {
+  userId: loggedUser.id,
+  ...form
+});
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert("Error saving data");
+      return;
     }
 
-    const completeProfile = {
-      ...loggedUser,
-      ...form,
-      bmi: bmiValue,
-      bmiCategory: category,
-      suggestion,
-    };
-
-    localStorage.setItem("userProfile", JSON.stringify(completeProfile));
+    // ✅ update local user
+    localStorage.setItem("user", JSON.stringify(data.user));
 
     navigate("/profile");
-  };
+
+  } catch (err) {
+    console.error(err);
+    alert("Server error");
+  }
+};
 
   return (
     <div className="min-h-screen bg-green-50 flex items-center justify-center pt-24">
@@ -128,4 +161,4 @@ function HealthForm() {
   );
 }
 
-export default HealthForm;
+export default HealthForm;  

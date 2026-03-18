@@ -24,7 +24,7 @@ function App() {
         <Route path="/menu" element={<Menu />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/delivery" element={<Delivery />} />
-        <Route path="/health-form" element={<HealthForm />} />
+        <Route path="/healthform" element={<HealthForm />} />
       </Routes>
     </Router>
   );

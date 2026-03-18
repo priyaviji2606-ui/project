@@ -10,6 +10,7 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use('/api/recommend', require('./routes/recommend'));
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
@@ -18,6 +19,7 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/user", require("./routes/userRoutes"));
 
 // Test Route
 app.get("/", (req, res) => {
